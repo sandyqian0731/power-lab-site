@@ -1,5 +1,5 @@
 ---
-title: Lab Updates
+title: Lab Updates (PREVIEW TEST)
 layout: hero_page
 fallback_color: 7695ce
 hero_image: img/hero_backgrounds/Lab-Updates.jpg
