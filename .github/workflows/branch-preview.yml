@@ -1,0 +1,78 @@
+name: Branch preview
+
+# Builds every non-main branch and publishes it to a separate preview repo,
+# under <preview repo>/<branch name>/. Deletes that folder when the branch is deleted.
+
+on:
+  push:
+    branches-ignore:
+      - main
+  delete:
+
+env:
+  PREVIEW_REPO: sandyqian0731/power-lab-site-previews
+  PREVIEW_REPO_NAME: power-lab-site-previews
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_publish:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: preview-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Folder name from branch
+        run: echo "SLUG=$(echo "$GITHUB_REF_NAME" | sed 's#[^A-Za-z0-9._-]#-#g')" >> "$GITHUB_ENV"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Build with preview base path
+        run: bundle exec jekyll build --baseurl "/${PREVIEW_REPO_NAME}/${SLUG}" --destination _site
+
+      - name: Add noindex to every page
+        run: find _site -name '*.html' -exec sed -i 's#<head[^>]*>#&<meta name="robots" content="noindex,nofollow">#I' {} +
+
+      - name: Publish to preview repo
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          external_repository: ${{ env.PREVIEW_REPO }}
+          publish_branch: gh-pages
+          publish_dir: _site
+          destination_dir: ${{ env.SLUG }}
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "Preview of ${{ github.ref_name }} at ${{ github.sha }}"
+
+  cleanup:
+    if: github.event_name == 'delete' && github.event.ref_type == 'branch' && github.event.ref != 'main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: preview-publish
+      cancel-in-progress: false
+    steps:
+      - name: Remove preview folder
+        env:
+          DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          DELETED_BRANCH: ${{ github.event.ref }}
+        run: |
+          SLUG=$(echo "$DELETED_BRANCH" | sed 's#[^A-Za-z0-9._-]#-#g')
+          mkdir -p ~/.ssh && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_preview && chmod 600 ~/.ssh/id_preview
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_preview -o StrictHostKeyChecking=accept-new"
+          git clone --branch gh-pages --depth 1 "git@github.com:${PREVIEW_REPO}.git" previews
+          cd previews
+          if [ -d "$SLUG" ]; then
+            git rm -r -q "$SLUG"
+            git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -q -m "Remove preview of ${DELETED_BRANCH}"
+            git push origin gh-pages
+          else
+            echo "No preview folder for $DELETED_BRANCH"
+          fi
