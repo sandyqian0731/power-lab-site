@@ -24,7 +24,7 @@ jobs:
       group: preview-publish
       cancel-in-progress: false
     env:
-      # The gemspec's old dev-only rake breaks native gem builds on Ruby 3.4
+      # Skip dev-only gems (the gemspec pins an old rake that breaks on newer Ruby)
       BUNDLE_WITHOUT: development:test
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.4'
+          ruby-version: '3.3'
           bundler-cache: true
 
       - name: Build with preview base path
