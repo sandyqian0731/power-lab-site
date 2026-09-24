@@ -28,6 +28,14 @@ jobs:
       BUNDLE_WITHOUT: development:test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge latest main into the build (not pushed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-edit origin/main
 
       - name: Folder name from branch
         run: echo "SLUG=$(echo "$GITHUB_REF_NAME" | sed 's#[^A-Za-z0-9._-]#-#g')" >> "$GITHUB_ENV"
