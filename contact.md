@@ -8,3 +8,4 @@ We welcome inquiries about the lab. If you are interested in joining the lab, pl
 
 
 ![Power Transformation Lab Logo](img/logo_no_text.png){:#contact-page-logo}
+<p>MERGE-TEST-MAIN-CHANGE</p>
