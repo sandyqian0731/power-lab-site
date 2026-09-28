@@ -34,3 +34,4 @@ Climate goals are increasingly being furthered by a range of policy tools, inclu
 - What are the most effective policies for achieving both climate and domestic industrial development goals?
 - What incentives are necessary to encourage firm low-carbon transitions and how should they be designed in contexts with high levels of state ownership?
 
+<p>BP-TEST-D</p>
